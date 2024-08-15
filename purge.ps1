@@ -1,1 +1,2 @@
-python ./main.py purge --dir "C:\Users\vireima\Downloads" ifc jpg pdf ifczip bcf bcfzip smc xlsx xls csv docx dwg ics msi exe png jpeg svg rvt zip rar --pattern "temp*" --pattern "Dokumentit*"
+purge purge --dir "C:\Users\vireima\Downloads" ifc jpg pdf ifczip bcf bcfzip smc xlsx xls csv docx dwg ics msi exe png jpeg svg rvt zip rar --pattern "temp*" --pattern "Dokumentit*"
+Read-Host -Prompt "Press Enter to exit"

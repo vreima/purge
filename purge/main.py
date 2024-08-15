@@ -65,20 +65,24 @@ def format_query(docs: Sequence[Document], show_errors: bool = True):
     """
     Helper function, prettyprints a list of documents (file deletions).
     """
+    if not docs:
+        print("No matching files, nothing deleted")
+        return
+
     no_errors = [doc for doc in docs if doc.get("error") is None]
     errors = [doc for doc in docs if doc.get("error") is not None]
     extensions: set[str] = {doc["ext"] for doc in docs}
 
     if no_errors:
         print(
-            f"Deleted {len(no_errors)} files ({sum(doc["size"] for doc in no_errors) / 1024 / 1024:.2f} MB)"
+            f"Deleted {len(no_errors)} files ({format_bytesize(sum(doc["size"] for doc in no_errors))})"
         )
 
         for extension in extensions:
             subdocs = [doc for doc in docs if doc["ext"] == extension]
             if subdocs:
                 print(
-                    f"--- {extension.upper()}: {len(subdocs)} files ({sum(doc["size"] for doc in subdocs) / 1024 / 1024:.2f} MB)"
+                    f"--- {extension.upper()}: {len(subdocs)} files ({format_bytesize(sum(doc["size"] for doc in subdocs))})"
                 )
 
     if show_errors and errors:
@@ -86,6 +90,9 @@ def format_query(docs: Sequence[Document], show_errors: bool = True):
 
 
 def purge_dir(path: Path, db: TinyDB):
+    """
+    Tries to remove the directory in 'path' by recursive unlinking al the contained files and directories.
+    """
     for child in path.iterdir():
         if child.is_dir():
             purge_dir(child, db)
@@ -96,6 +103,19 @@ def purge_dir(path: Path, db: TinyDB):
         path.rmdir()
     except OSError as err:
         print(f"Error trying to purge {path}: {err.strerror} [{err.errno}]")
+
+
+def format_bytesize(size_bytes: int) -> str:
+    """
+    Formats 1230 into "1.23 kB" etc.
+    """
+    units = ["B", "kB", "MB", "GB", "TB"]
+
+    for magnitude, unit in enumerate(units):
+        if size_bytes < 1000 ** (magnitude + 1):
+            return f"{size_bytes/(1000**(magnitude)):.2f} {unit}"
+
+    return f"{size_bytes/(1000**(magnitude)):.2f} {unit}"
 
 
 def purge_files(
@@ -151,6 +171,9 @@ def query(
     / "db.json"
 ):
     tinydb = open_database(db)
+    docs = [Document(**doc) for doc in tinydb.all()]
+    first = min(doc["date"] for doc in docs)
+    print(f"History from {first}")
     format_query([Document(**doc) for doc in tinydb.all()])
 
 
